@@ -2,23 +2,6 @@ from pymongo import MongoClient
 
 connection = MongoClient()
 db = connection.imagequick_dev
-events = db.events.find()
-voices = db.voices.find()
-
-voicelist = []
-
-for voice in voices:
-	voicelist.append(voice['name'])
-
-voice_play = dict.fromkeys(voicelist,0)
-voice_buy = dict.fromkeys(voicelist,0)
-
-templatelist = []
-for template in db.templates.find():
-	templatelist.append(template['name'])
-
-template_play = dict.fromkeys(templatelist,0)
-template_buy = dict.fromkeys(templatelist,0)
 
 def zerotoone(l):
 	keyl = []
@@ -27,55 +10,114 @@ def zerotoone(l):
 		keyl.append(key)
 		if value==0:
 			valuel.append(1)
+		if value==0.0:
+			valuel.append(1)
 		else:
 			valuel.append(value)
 	return dict(zip(keyl,valuel))
 
-for template in db.templates.find():
-	for event in db.events.find():
-		if event['template']==template['name']:
-			if event['event'] == 'play':
-				template_play[template['name']] += 1
-			elif event['event'] == 'purchase':
-				template_buy[template['name']] += 1
-			else:
-				pass
+def get_voice_list():
+	voicelist = []
+	for voice in db.voices.find():
+		voicelist.append(voice['name'])
+	return voicelist
 
-for voice in db.voices.find():
-	
-	for event in db.events.find():
-		for e_voice in event['voices']:
-			if e_voice == voice['name']:
-				if(event['event']=='play'):			
-					voice_play[voice['name']] += 1
-				elif(event['event']=='purchase'):
-					voice_buy[voice['name']] += 1
+def get_template_list():
+	templatelist = []
+	for template in db.templates.find():
+		templatelist.append(template['name'])
+	return templatelist
+
+def get_format_list():
+	formatlist = []
+	for format in db.formats.find():
+		formatlist.append(format['name'])
+	return formatlist
+
+def analyse_templates():
+	template_play = dict.fromkeys(get_template_list(),0)
+	template_buy = dict.fromkeys(get_template_list(),0)
+	for template in db.templates.find():
+		for event in db.events.find():
+			if event['template'].lower()==template['name'].lower():
+				if event['event'] == 'play':
+					template_play[template['name'].lower()] += 1
+				elif event['event'] == 'purchase':
+					template_buy[template['name'].lower()] += 1
 				else:
 					pass
-formatlist = []
-for format in db.formats.find():
-	formatlist.append(format['name'])
+	return template_play,template_buy
 
-format_play = dict.fromkeys(formatlist,0)
-format_buy = dict.fromkeys(formatlist,0)
-for format in db.formats.find():
-	for event in db.events.find():
-		if format['name'] == event['format']:
-			if event['event']=='play':
-				format_play[format['name']] +=1
-			elif event['event']=='purchase':
-				format_buy[format['name']] +=1
-			else:
-				pass
+def analyse_voices():
+	voice_play = dict.fromkeys(get_voice_list(),0)
+	voice_buy = dict.fromkeys(get_voice_list(),0)
+	for voice in db.voices.find():
+		
+		for event in db.events.find():
+			for e_voice in event['voices']:
+				if e_voice == voice['name']:
+					if(event['event']=='play'):			
+						voice_play[voice['name']] += 1
+					elif(event['event']=='purchase'):
+						voice_buy[voice['name']] += 1
+					else:
+						pass
+	return voice_play,voice_buy
 
-voice_play = zerotoone(voice_play)
-ratio = {k: float(voice_buy[k])/voice_play[k] for k in voice_buy}	
+def analyse_formats():
+	format_play = dict.fromkeys(get_format_list(),0)
+	format_buy = dict.fromkeys(get_format_list(),0)
+	for format in db.formats.find():
+		for event in db.events.find():
+			if format['name'] == event['format']:
+				if event['event']=='play':
+					format_play[format['name']] +=1
+				elif event['event']=='purchase':
+					format_buy[format['name']] +=1
+				else:
+					pass
+	return format_play,format_buy
 
-template_play = zerotoone(template_play)
-template_ratio = {k: float(template_buy[k])/template_play[k] for k in template_buy}	
+def get_ratio(l1,l2):
+	l1 = zerotoone(l1)
+	print l1,l2
+	ratio = {k: float(l2[k])/l1[k] for k in l2}	
+	return ratio
 
-format_play = zerotoone(format_play)
-format_ratio = {k: float(format_buy[k])/format_play[k] for k in format_buy}	
+def pretty_print(analyse_function):
+	f_play,f_buy = analyse_function()
+	items = get_ratio(f_play,f_buy)
+	for key,value in items.items():
+		if(value==0.0):
+			del items[key]
+	return items
 
+def analyse_voice(voice):
+	play = 0
+	buy = 0
+	for event in db.events.find({'voices':voice}):
+		for e_voice in event['voices']:
+			if e_voice == voice:
+				if event['event'] == 'play':
+					play +=1
+				elif event['event'] == 'purchase':
+					buy +=1
+				else:
+					pass
+
+	return play,buy
+
+def analyse_template(template):
+	play = 0
+	buy = 0
+	for event in db.events.find({'template':template}):
+		if event['event'] == 'play':
+			play +=1
+		elif event['event'] == 'purchase':
+			buy +=1
+		else:
+			pass
+
+	return play,buy
 
 
