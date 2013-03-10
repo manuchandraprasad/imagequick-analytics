@@ -38,14 +38,17 @@ def analyse_templates():
 	template_play = dict.fromkeys(get_template_list(),0)
 	template_buy = dict.fromkeys(get_template_list(),0)
 	for template in db.templates.find():
-		for event in db.events.find():
-			if event['template'].lower()==template['name'].lower():
-				if event['event'] == 'play':
-					template_play[template['name'].lower()] += 1
-				elif event['event'] == 'purchase':
-					template_buy[template['name'].lower()] += 1
-				else:
-					pass
+		play = 0
+		buy = 0
+		for event in db.events.find({'template':template['name']}):
+			if event['event'] == 'play':
+				play += 1
+			elif event['event'] == 'purchase':
+				buy += 1
+			else:
+				pass
+		template_play[template['name']] = play
+		template_buy[template['name']] = buy
 	return template_play,template_buy
 
 def analyse_voices():
@@ -81,15 +84,20 @@ def analyse_formats():
 def get_ratio(l1,l2):
 	l1 = zerotoone(l1)
 	print l1,l2
-	ratio = {k: float(l2[k])/l1[k] for k in l2}	
+	ratio = {k: float(l2[k])/float(l1[k]) for k in l2}	
 	return ratio
+
+def stripzeros(p,b):
+	for key,value in p.items():
+		if value == 0:
+			del p[key]
+			del b[key]
 
 def pretty_print(analyse_function):
 	f_play,f_buy = analyse_function()
-	items = get_ratio(f_play,f_buy)
-	for key,value in items.items():
-		if(value==0.0):
-			del items[key]
+	print f_play,f_buy
+	p,b = stripzeros(f_play, f_buy)
+	items = get_ratio(p,b)
 	return items
 
 def analyse_voice(voice):
