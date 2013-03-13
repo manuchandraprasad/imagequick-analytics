@@ -89,29 +89,22 @@ def chart_formats():
 
 def chart_producers():
 	index = get_producer_list()
-	p_play = []
-	p_buy = []
-
-	for producer in index:
-		play = 0.0
-		buy = 0.0
-		for event in db.events.find({'producer':producer}):
-			if event['event'] == 'play':
-				play +=1
-			elif event['event'] == 'purchase':
-				buy += 1
-		p_play.append(play)
-		p_buy.append(buy)
-
+	p_play = [0]*len(index)
+	p_buy = [0]*len(index)
 	data = {
 		'play':p_play,
 		'buy' :p_buy
 	}
 
 	chart = DataFrame(data,index=index)
+	for event in db.events.find():
+		if event['event'] == 'play':
+			chart.play[event['producer']] += 1
+		elif event['event'] == 'purchase':
+			 chart.buy[event['producer']] += 1
 	chart['b2p_percent'] = chart.buy/chart.play*100
 	chart.sort_index()
-	chart.to_excel('producer_analysis.xls')
+	#chart.to_excel('producer_analysis.xls')
 	return chart
 
 def chart_voice_format():
@@ -162,3 +155,24 @@ def monthly_voice(month,year):
 					frame.buy[v] += 1
 
 	return frame
+
+def pay_voice():
+	voices = get_voice_list()
+	commission = [0]*len(voices)
+	purchase = [0]*len(voices)
+	data = {
+		 'commission':commission,
+		 'purchase':purchase
+	}
+	frame = DataFrame(data,index=voices)
+	for event in db.events.find({'event':'play'}):
+		print event['template']
+	 	l =len(event['voices'])
+	 	com = 2.5/l
+	 	for voice in event['voices']:
+	 		if voice is not None:
+	 			frame.commission[voice] += com
+
+	print frame
+
+
