@@ -75,37 +75,17 @@ def chart_formats():
 					'buy' :f_buy
 				}
 	chart = DataFrame(data,index=index)
-	for event in db.events.find({'format':format}):
-						if event['event'] == 'play':
-							chart.play(event['format']) 
-						elif event['event'] == 'purchase':
-							chart.buy(event['format'])
-     print frame
+	for event in db.events.find():
+		if event['format'] is not None:
+			if event['event'] == 'play':
+				chart.play[event['format']] += 1
+			elif event['event'] == 'purchase':	
+				chart.buy[event['format']] += 1
+	chart['b2p_percent'] = chart.buy/chart.play*100
+	chart.sort_index()
+	#chart.to_excel('format_analysis.xls')
+	return chart
 
-	'''for format in index:
-					play = 0.0
-					buy = 0.0
-					# The code below is removed as it puts more load on database and takes more time to execute
-					#play += db.events.find({'format':format,'event':'play'}).count()
-					#buy += db.events.find({'format':format,'event':'purchase'}).count()
-					for event in db.events.find({'format':format}):
-						if event['event'] == 'play':
-							play +=1
-						elif event['event'] == 'purchase':
-							buy += 1
-					f_play.append(play)
-					f_buy.append(buy)
-			
-				data = {
-					'play':f_play,
-					'buy' :f_buy
-				}
-			
-				chart = DataFrame(data,index=index)
-				chart['b2p_percent'] = chart.buy/chart.play*100
-				chart.sort_index()
-				chart.to_excel('format_analysis.xls')
-				return chart'''
 
 def chart_producers():
 	index = get_producer_list()
