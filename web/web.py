@@ -1,8 +1,10 @@
 from flask import Flask
 from flask import render_template
 import sys
+
 sys.path.insert(0, '/home/manu/imagequick-analytics/')
 import analysis
+import sc
 app = Flask(__name__)
 
 
@@ -12,8 +14,9 @@ def index():
 
 @app.route('/templates')
 def web_templates_all():
-	t =	analysis.pretty_print(analysis.analyse_templates)
-	return render_template('base.html',items=t,title='Templates')
+	t = sc.chart_templates()
+	return t
+	#return render_template('base.html',items=t,title='Templates')
 
 @app.route('/formats')
 def web_formats_all():

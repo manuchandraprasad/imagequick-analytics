@@ -28,6 +28,12 @@ def get_template_list():
 		templatelist.append(template['name'])
 	return templatelist
 
+def get_producer_list():
+	producer_list = []
+	for template in db.templates.find():
+		producer_list.append(template['producer'])
+	return list(set(producer_list))
+
 def get_format_list():
 	formatlist = []
 	for format in db.formats.find():
@@ -96,8 +102,8 @@ def stripzeros(p,b):
 def pretty_print(analyse_function):
 	f_play,f_buy = analyse_function()
 	print f_play,f_buy
-	p,b = stripzeros(f_play, f_buy)
-	items = get_ratio(p,b)
+	#p,b = stripzeros(f_play, f_buy)
+	items = get_ratio(f_play,f_buy)
 	return items
 
 def analyse_voice(voice):
