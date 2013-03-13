@@ -47,31 +47,27 @@ def chart_templates():
 	return chart.to_html()
 
 def chart_voices():
-	index = get_voice_list()
-	v_play = []
-	v_buy = []
+	
+	voices=[]
+	for voice in db.voices.find().limit(30):
+		voices.append(voice['name'])
 
-	for voice in index:
-		play = 0.0
-		buy = 0.0
-		for event in db.events.find({'voices':voice}):
-			if event['event'] == 'play':
-				play +=1
-			elif event['event'] == 'purchase':
-				buy += 1
-		v_play.append(play)
-		v_buy.append(buy)
-
-	data = {
-		'play':v_play,
-		'buy' :v_buy
+	play=[0]*len(voices)
+	buy=[0]*len(voices)
+	data={
+		'play':play,
+		'buy':buy
 	}
+	frame=DataFrame(data,index=voices)
+	for event in db.events.find():
+		for voice in event['voices']:
+			if voice is not None:
+				if event['event'] =='play':
+					frame.play[voice] += 1
+				elif event['event'] == 'purchase':
+					frame.buy[voice] += 1
+	print frame
 
-	chart = DataFrame(data,index=index)
-	chart['b2p_percent'] = (chart.buy/chart.play)*100
-	chart.sort_index()
-	chart.to_excel('voices_analysis.xls')
-	return chart
 
 def chart_formats():
 	index = get_format_list()
