@@ -48,10 +48,7 @@ def chart_templates():
 
 def chart_voices():
 	
-	voices=[]
-	for voice in db.voices.find().limit(30):
-		voices.append(voice['name'])
-
+	voices=get_voice_list()
 	play=[0]*len(voices)
 	buy=[0]*len(voices)
 	data={
