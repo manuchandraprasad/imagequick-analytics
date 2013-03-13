@@ -75,7 +75,12 @@ def chart_formats():
 					'buy' :f_buy
 				}
 	chart = DataFrame(data,index=index)
-
+	for event in db.events.find({'format':format}):
+						if event['event'] == 'play':
+							chart.play(event['format']) 
+						elif event['event'] == 'purchase':
+							chart.buy(event['format'])
+     print frame
 
 	'''for format in index:
 					play = 0.0
