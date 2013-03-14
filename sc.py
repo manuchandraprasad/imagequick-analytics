@@ -44,13 +44,13 @@ def chart_templates():
 	chart['b2p_percent'] = (chart.buy/chart.play)*100
 	chart.sort_index()
 	chart.to_excel('templates_analysis.xls')
-	return chart.to_html()
+	#return chart.to_html()
 
 def chart_voices():
 	
 	voices=get_voice_list()
-	play=[0]*len(voices)
-	buy=[0]*len(voices)
+	play=[0.0]*len(voices)
+	buy=[0.0]*len(voices)
 	data={
 		'play':play,
 		'buy':buy
@@ -68,8 +68,8 @@ def chart_voices():
 
 def chart_formats():
 	index = get_format_list()
-	f_play = [0]*len(index)
-	f_buy = [0]*len(index)
+	f_play = [0.0]*len(index)
+	f_buy = [0.0]*len(index)
 	data = {
 					'play':f_play,
 					'buy' :f_buy
@@ -89,19 +89,21 @@ def chart_formats():
 
 def chart_producers():
 	index = get_producer_list()
-	p_play = [0]*len(index)
-	p_buy = [0]*len(index)
+	p_play = [0.0]*len(index)
+	p_buy = [0.0]*len(index)
 	data = {
 		'play':p_play,
 		'buy' :p_buy
 	}
 
 	chart = DataFrame(data,index=index)
+	print chart
 	for event in db.events.find():
-		if event['event'] == 'play':
-			chart.play[event['producer']] += 1
-		elif event['event'] == 'purchase':
-			 chart.buy[event['producer']] += 1
+		if event['producer'] is not None:
+			if event['event'] == 'play':
+				chart.play[event['producer']] += 1
+			elif event['event'] == 'purchase':
+				chart.buy[event['producer']] += 1
 	chart['b2p_percent'] = chart.buy/chart.play*100
 	chart.sort_index()
 	#chart.to_excel('producer_analysis.xls')
@@ -134,19 +136,19 @@ def chart_voice_format():
 	col = pd.MultiIndex.from_arrays([f_list,k_list],names=['format','type'])
 
 	chart = DataFrame(data,columns=col,index=get_voice_list())
-	chart.to_excel('/home/manu/voice_format_anlysis.xls')
+	#chart.to_excel('/home/manu/voice_format_anlysis.xls')
 	return chart
 
 def monthly_voice(month,year):
 	voices = get_voice_list()
-	play = [0]*len(voices)
-	buy = [0]*len(voices)
+	play = [0.0]*len(voices)
+	buy = [0.0]*len(voices)
 	data = {
 		'buy':buy,
 		'play':play
 	}
 	frame = DataFrame(data,index=voices)
-	for e in db.events.find():
+	for e in db.events.find({'date.year':(year),'date.month':str(month)}):
 		for v in e['voices']:
 			if v is not None:
 				if e['event'] == 'play':
@@ -156,23 +158,35 @@ def monthly_voice(month,year):
 
 	return frame
 
-def pay_voice():
+def pay_voice(month,year):
 	voices = get_voice_list()
-	commission = [0]*len(voices)
-	purchase = [0]*len(voices)
+	commission = [0.0]*len(voices)
 	data = {
 		 'commission':commission,
-		 'purchase':purchase
 	}
 	frame = DataFrame(data,index=voices)
-	for event in db.events.find({'event':'play'}):
-		print event['template']
-	 	l =len(event['voices'])
-	 	com = 2.5/l
+	print year,month
+	for event in db.events.find({'event':'purchase','date.year':year,'date.month':month}):
+		l=1
+		if event['voices']:
+			l =len(event['voices'])
+	 	com = (5.99*0.25)/l
 	 	for voice in event['voices']:
 	 		if voice is not None:
 	 			frame.commission[voice] += com
+	return frame
 
-	print frame
+def pay_producer(month,year):
+	producers = get_producer_list()
+	commission = [0.0]*len(producers)
+	data = {
+		 'commission':commission,
+	}
+	frame = DataFrame(data,index=producers)
+	print year,month
+	for event in db.events.find({'event':'purchase','date.year':year,'date.month':month}):
+		if event['producer']:
+	 		com = 5.99*0.25
+	 		frame.commission[event['producer']] += com
 
-
+	return frame
